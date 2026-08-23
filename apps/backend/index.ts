@@ -1,1 +1,24 @@
-console.log("Hello via Bun!");
+import express from "express"
+import { preInterviewReady } from "./types"
+import { scrapeGithub } from "./scrapers/github"
+
+const app = express()
+app.use(express.json())
+
+app.post("/api/v1/pre-interview", async(req,res)=>{
+    const {success, data} = preInterviewReady.safeParse(req.body)
+    if(!success){
+        res.status(411).json({
+            message:"Incorrect Body"
+        })
+        return;
+    }
+    const githubUrl = data.github.endsWith("/") ? data.github.slice(0, -1) : data.github;
+
+    const githubUsername = githubUrl.split("/").pop()!;
+
+    const githubData = await scrapeGithub(githubUsername);
+
+})
+
+app.listen(3001)
