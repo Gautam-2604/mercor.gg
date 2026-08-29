@@ -1,9 +1,11 @@
 import express from "express"
 import { preInterviewReady } from "./types"
 import { scrapeGithub } from "./scrapers/github"
+import cors from "cors"
 
 const app = express()
 app.use(express.json())
+app.use(cors())
 
 app.post("/api/v1/pre-interview", async(req,res)=>{
     const {success, data} = preInterviewReady.safeParse(req.body)
