@@ -8,7 +8,6 @@ import { VoiceOrb } from "./VoiceOrb";
 
 type Status = "connecting" | "live" | "ending";
 
-/** Attaches an analyser to a stream and returns a getter for its current 0..1 volume level. */
 function createLevelMeter(ctx: AudioContext, stream: MediaStream) {
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
@@ -25,7 +24,6 @@ function createLevelMeter(ctx: AudioContext, stream: MediaStream) {
             sum += v * v;
         }
         const rms = Math.sqrt(sum / data.length);
-        // Boost and clamp so normal speech fills most of the range.
         return Math.min(1, rms * 3.2);
     };
 }
@@ -38,7 +36,6 @@ export function Interview() {
     const [aiLevel, setAiLevel] = useState(0);
     const [userLevel, setUserLevel] = useState(0);
 
-    // Resources we need to tear down on exit.
     const pcRef = useRef<RTCPeerConnection | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
@@ -58,7 +55,6 @@ export function Interview() {
             let aiMeter: (() => number) | null = null;
             let userMeter: (() => number) | null = null;
 
-            // Play + meter the AI's audio.
             const audioEl = document.createElement("audio");
             audioEl.autoplay = true;
             pc.ontrack = (e) => {
@@ -67,7 +63,6 @@ export function Interview() {
                 aiMeter = createLevelMeter(audioCtx, stream);
             };
 
-            // Capture the user's microphone.
             const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
             if (cancelled) {
                 ms.getTracks().forEach((t) => t.stop());
@@ -76,10 +71,8 @@ export function Interview() {
             userStreamRef.current = ms;
             userMeter = createLevelMeter(audioCtx, ms);
 
-            // Stream the mic to Deepgram for live transcription.
             const socket = new WebSocket("wss://api.deepgram.com/v1/listen", [
                 "token",
-                //TODO: Lets create ephemereal api keys for the user and not put the prod key on the frontend
                 "",
             ]);
             socketRef.current = socket;
@@ -105,7 +98,6 @@ export function Interview() {
 
             pc.addTrack(ms.getTracks()[0]!);
 
-            // SDP handshake with the backend.
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
             const sdpResponse = await fetch(`${BACKEND_URL}/api/v1/session/${interviewId}`, {
@@ -119,7 +111,6 @@ export function Interview() {
             if (cancelled) return;
             setStatus("live");
 
-            // Single animation loop drives both volume meters.
             const tick = () => {
                 if (aiMeter) setAiLevel(aiMeter());
                 if (userMeter) setUserLevel(userMeter());
@@ -132,7 +123,6 @@ export function Interview() {
             cancelled = true;
             cleanup();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [interviewId]);
 
     function cleanup() {
