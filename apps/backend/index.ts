@@ -9,6 +9,7 @@ import { calculateResult } from "./result";
 const app = express();
 app.use(express.json());
 app.use(cors());
+
 app.use(express.text({ type: ["application/sdp", "text/plain"] }));
 
 app.post("/api/v1/pre-interview", async (req, res) => { 
