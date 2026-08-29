@@ -2,6 +2,7 @@ import express from "express"
 import { preInterviewReady } from "./types"
 import { scrapeGithub } from "./scrapers/github"
 import cors from "cors"
+import {prisma} from "./db"
 
 const app = express()
 app.use(express.json())
@@ -20,6 +21,15 @@ app.post("/api/v1/pre-interview", async(req,res)=>{
     const githubUsername = githubUrl.split("/").pop()!;
 
     const githubData = await scrapeGithub(githubUsername);
+
+    const interview = await prisma.interview.create({
+        data:{
+            githubMetadata:JSON.stringify(githubData),
+            status:"Pre"
+        }
+    })
+
+    res.json({id: interview.id})
 
 })
 
